@@ -1,56 +1,54 @@
-# wasm-snake-game Slide 2
+# wasm-snake-game: Slide 3
 
-1. Using wee_alloc: The Wasm-Enabled, Elfin Allocator.
+build the snake grid
 
-> wee_alloc is focused on targeting WebAssembly, producing a small .wasm code size, and having a simple, correct implementation. It is geared towards code that makes a handful of initial dynamically sized allocations, and then performs its heavy lifting without any further allocations
-
-SOURCE: [wee_alloc](https://github.com/rustwasm/wee_alloc)
-
-2. isolating the html from the wasm for better debug experience
-
-Previously in index.html
-```html
-<body>
-<script type="module">
-  import init, { World } from './pkg/snake_game.js';
-
-  async function run() {
-
-    await init();
-
-    const world = World.new();
-    console.log("width: " + world.width);
-  }
-
-  run();
-</script>
-</body>
-```
-now in index.html
-
-```html
-<body>
-
-<script src="./bootstrap.js"></script>
-</body>
-```
-
-Errors can be better traced  by adding some level of indirection :-)
+This is one way, but it feels cluttered
 
 ```js
-import("./index.js")
-  .catch(e => console.error("Error importing index.js :", e))
+    function drawWorld() {
+        ctx.beginPath();
+        
+        // I find this unnesseraly cluttering to the eyes and demanding on the cpu
+        // mk column: mv on the y axis
+        for (let y=0; y <= world_width; y++) {
+            ctx.moveTo(y * CELL_SIZE, 0);
+            ctx.lineTo(y * CELL_SIZE, world_width * CELL_SIZE); 
+        }
+
+        // mk row: mv on the x axis
+        for (let x=0; x < world_width + 1; x++) {
+            ctx.moveTo(0, CELL_SIZE * x);
+            ctx.lineTo(world_width * CELL_SIZE, CELL_SIZE * x); 
+        }
+
+
+        ctx.stroke();
+    }
+
 ```
 
-Finally we reach the code that loads the wasm file
-using init.then() rather than async/await
+But this version is clear and avoid performing calculations in a loop
 
 ```js
-import init, { World } from "../pkg/snake_game.js";
+    function drawWorld() {
+        ctx.beginPath();
+        
 
-init().then(_ => {
-    const world = World.new();
-    console.log("from index.js: " + world.width);
-})
+        // mk column: mv on the y axis
+        for (let y=0; y <= canvas.height; y+=CELL_SIZE) {
+            ctx.moveTo(y, 0);
+            ctx.lineTo(y, canvas.height ); 
+        }
+        
+        // mk row: mv on the x axis
+        // I find this unnesseraly cluttering to the eyes and demanding on the cpu
+        for (let x=0; x <= canvas.width; x+=CELL_SIZE) {
+            ctx.moveTo(0, x);
+            ctx.lineTo(canvas.width, x); 
+        }
+        
+
+        ctx.stroke();
+    }
 
 ```
