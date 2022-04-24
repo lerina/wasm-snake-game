@@ -2,6 +2,7 @@ import init, { World } from "../pkg/snake_game.js";
 
 init().then(_ => {
     const CELL_SIZE = 20;
+    const refresh_rate = 100;
 
     const world = World.new();
     const world_width = world.width(); // avoid back and forth js-rust
@@ -11,7 +12,7 @@ init().then(_ => {
    
     canvas.height = world_width * CELL_SIZE;
     canvas.width = world_width * CELL_SIZE; // world_widht: bad name dim would be better
-    
+
     function drawWorld() {
         ctx.beginPath();
 
@@ -49,5 +50,12 @@ init().then(_ => {
 
     drawWorld();
     drawSnake();
+
+    setInterval(() => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawWorld();
+        drawSnake();
+
+    }, refresh_rate);
 })
 

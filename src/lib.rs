@@ -42,6 +42,7 @@ impl World {
     pub fn snake_head_idx(&self) -> usize {
         self.snake.body[0].0
     }
+
 }
 
 
