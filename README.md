@@ -1,50 +1,56 @@
-# wasm-snake-game: Slide 3
+# wasm-snake-game: Slide 4
 
-Build the snake grid
+Build the snake
 
-This is one way, but it feels cluttered
+Instead of having a meaningless vector of usize, a little inderection here
+will make the code more pleasing to the eyes.
 
-```js
-    function drawWorld() {
-        ctx.beginPath();
-        
-        // I find this unnesseraly cluttering to the eyes and demanding on the cpu
-        // mk column: mv on the y axis
-        for (let y=0; y <= world_width; y++) {
-            ctx.moveTo(y * CELL_SIZE, 0);
-            ctx.lineTo(y * CELL_SIZE, world_width * CELL_SIZE); 
+```rust
+struct SnakeCell(usize);
+
+struct Snake {
+    body: Vec<SnakeCell>,
+}
+```
+Next we make a "constructor" for the Snake
+```rust
+impl Snake {
+    fn new(spawn_index: usize) -> Self {
+        Snake{
+            body: vec!(SnakeCell(spawn_index)),
         }
-
-        // mk row: mv on the x axis
-        for (let x=0; x < world_width + 1; x++) {
-            ctx.moveTo(0, CELL_SIZE * x);
-            ctx.lineTo(world_width * CELL_SIZE, CELL_SIZE * x); 
-        }
-
-        ctx.stroke();
     }
-
+}
 ```
 
-But this version is clear and avoid performing calculations in a loop
+Update the world
 
-```js
-    function drawWorld() {
-        ctx.beginPath();
-        
-        // mk column: mv on the y axis
-        for (let y=0; y <= canvas.height; y+=CELL_SIZE) {
-            ctx.moveTo(y, 0);
-            ctx.lineTo(y, canvas.height ); 
+```rust
+#[wasm_bindgen]
+pub struct World {
+    width: usize,
+    snake: Snake,
+}
+
+#[wasm_bindgen]
+impl World {
+    pub fn new() -> Self {
+        World { 
+            width: WORLD_WIDTH,
+            snake: Snake::new(10),
         }
-        
-        // mk row: mv on the x axis
-        for (let x=0; x <= canvas.width; x+=CELL_SIZE) {
-            ctx.moveTo(0, x);
-            ctx.lineTo(canvas.width, x); 
-        }
-        
-        ctx.stroke();
     }
 
+    pub fn width(&self) -> usize {
+        self.width
+    }
+```
+
+and add a getter for the Snake's head
+
+```rust
+    pub fn snake_head_idx(&self) -> usize {
+        self.snake.body[0].0
+    }
+}
 ```

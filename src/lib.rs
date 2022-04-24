@@ -6,19 +6,41 @@ static ALLOC: WeeAlloc = WeeAlloc::INIT;
 
 const WORLD_WIDTH: usize = 8;
 
+struct SnakeCell(usize);
+
+struct Snake {
+    body: Vec<SnakeCell>,
+}
+
+impl Snake {
+    fn new(spawn_index: usize) -> Self {
+        Snake{
+            body: vec!(SnakeCell(spawn_index)),
+        }
+    }
+}
+
 #[wasm_bindgen]
 pub struct World {
-    pub width: usize,
+    width: usize,
+    snake: Snake,
 }
 
 #[wasm_bindgen]
 impl World {
     pub fn new() -> Self {
-        World { width: WORLD_WIDTH }
+        World { 
+            width: WORLD_WIDTH,
+            snake: Snake::new(10),
+        }
     }
 
     pub fn width(&self) -> usize {
         self.width
+    }
+
+    pub fn snake_head_idx(&self) -> usize {
+        self.snake.body[0].0
     }
 }
 
