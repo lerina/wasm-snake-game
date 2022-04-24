@@ -1,6 +1,6 @@
 # wasm-snake-game: Slide 3
 
-build the snake grid
+Build the snake grid
 
 This is one way, but it feels cluttered
 
@@ -21,7 +21,6 @@ This is one way, but it feels cluttered
             ctx.lineTo(world_width * CELL_SIZE, CELL_SIZE * x); 
         }
 
-
         ctx.stroke();
     }
 
@@ -33,7 +32,6 @@ But this version is clear and avoid performing calculations in a loop
     function drawWorld() {
         ctx.beginPath();
         
-
         // mk column: mv on the y axis
         for (let y=0; y <= canvas.height; y+=CELL_SIZE) {
             ctx.moveTo(y, 0);
@@ -41,13 +39,11 @@ But this version is clear and avoid performing calculations in a loop
         }
         
         // mk row: mv on the x axis
-        // I find this unnesseraly cluttering to the eyes and demanding on the cpu
         for (let x=0; x <= canvas.width; x+=CELL_SIZE) {
             ctx.moveTo(0, x);
             ctx.lineTo(canvas.width, x); 
         }
         
-
         ctx.stroke();
     }
 
