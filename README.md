@@ -1,32 +1,29 @@
-# wasm-snake-game: Slide 5
+# wasm-snake-game: Slide 6
 
-Draw the snake.  Only the head for now :-)
+Refresh canvas
 
-The fillRect() method draws a "filled" rectangle.
-The default color of the fill is black.
 
 ```js
-    function drawSnake() {
-        const snake_idx = world.snake_head_idx();
-        const col = snake_idx % world_width;
-        const row = Math.floor(snake_idx / world_width);
-        
-        ctx.beginPath();
+import init, { World } from "../pkg/snake_game.js";
 
-        ctx.fillRect(
-            col * CELL_SIZE,            // x: upper-left corner
-            row * CELL_SIZE,            // y: upper-left corner
-            CELL_SIZE, CELL_SIZE);      // width, height
+init().then(_ => {
+    const CELL_SIZE = 20;
+    const refresh_rate = 100;
 
-        ctx.stroke();
-    }
-```
+    const world = World.new();
 
-Then you draw the snake after drawing the world
+...
 
-```js
     drawWorld();
     drawSnake();
+
+    setInterval(() => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawWorld();
+        drawSnake();
+
+    }, refresh_rate);
+})
 ```
 
 
