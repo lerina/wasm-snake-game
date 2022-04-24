@@ -1,56 +1,32 @@
-# wasm-snake-game: Slide 4
+# wasm-snake-game: Slide 5
 
-Build the snake
+Draw the snake.  Only the head for now :-)
 
-Instead of having a meaningless vector of usize, a little inderection here
-will make the code more pleasing to the eyes.
+The fillRect() method draws a "filled" rectangle.
+The default color of the fill is black.
 
-```rust
-struct SnakeCell(usize);
+```js
+    function drawSnake() {
+        const snake_idx = world.snake_head_idx();
+        const col = snake_idx % world_width;
+        const row = Math.floor(snake_idx / world_width);
+        
+        ctx.beginPath();
 
-struct Snake {
-    body: Vec<SnakeCell>,
-}
-```
-Next we make a "constructor" for the Snake
-```rust
-impl Snake {
-    fn new(spawn_index: usize) -> Self {
-        Snake{
-            body: vec!(SnakeCell(spawn_index)),
-        }
-    }
-}
-```
+        ctx.fillRect(
+            col * CELL_SIZE,            // x: upper-left corner
+            row * CELL_SIZE,            // y: upper-left corner
+            CELL_SIZE, CELL_SIZE);      // width, height
 
-Update the world
-
-```rust
-#[wasm_bindgen]
-pub struct World {
-    width: usize,
-    snake: Snake,
-}
-
-#[wasm_bindgen]
-impl World {
-    pub fn new() -> Self {
-        World { 
-            width: WORLD_WIDTH,
-            snake: Snake::new(10),
-        }
-    }
-
-    pub fn width(&self) -> usize {
-        self.width
+        ctx.stroke();
     }
 ```
 
-and add a getter for the Snake's head
+Then you draw the snake after drawing the world
 
-```rust
-    pub fn snake_head_idx(&self) -> usize {
-        self.snake.body[0].0
-    }
-}
+```js
+    drawWorld();
+    drawSnake();
 ```
+
+

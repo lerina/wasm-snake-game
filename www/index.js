@@ -31,7 +31,23 @@ init().then(_ => {
         ctx.stroke();
     }
     
-    console.log("snake head, cell: " + world.snake_head_idx());
+
+    function drawSnake() {
+        const snake_idx = world.snake_head_idx();
+        const col = snake_idx % world_width;
+        const row = Math.floor(snake_idx / world_width);
+        
+        ctx.beginPath();
+
+        ctx.fillRect(
+            col * CELL_SIZE, 
+            row * CELL_SIZE, 
+            CELL_SIZE, CELL_SIZE);
+
+        ctx.stroke();
+    }
+
     drawWorld();
+    drawSnake();
 })
 
