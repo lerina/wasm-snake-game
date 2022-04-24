@@ -26,4 +26,5 @@ wasm-pack build --target web
 printf '%s\n' "serving page at: http://127.0.0.1:8080"
 #python3 -m http.server
 #firefox http://127.0.0.1:8080/$TARGET.html &
-http -a 127.0.0.1 -p 8080
+cp -fr pkg www/
+http -a 127.0.0.1 -p 8080 www/

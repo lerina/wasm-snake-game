@@ -4,6 +4,21 @@ use wee_alloc::WeeAlloc;
 #[global_allocator]
 static ALLOC: WeeAlloc = WeeAlloc::INIT;
 
+const WORLD_WIDTH: usize = 8;
+
+#[wasm_bindgen]
+pub struct World {
+    pub width: usize,
+}
+
+#[wasm_bindgen]
+impl World {
+    pub fn new() -> Self {
+        World { width: WORLD_WIDTH }
+    }
+}
+
+
 
 #[cfg(test)]
 mod tests {
