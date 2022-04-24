@@ -1,4 +1,4 @@
-# wasm-snake-game
+# wasm-snake-game Slide 2
 
 1. Using wee_alloc: The Wasm-Enabled, Elfin Allocator.
 
