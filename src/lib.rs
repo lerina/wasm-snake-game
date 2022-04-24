@@ -16,6 +16,10 @@ impl World {
     pub fn new() -> Self {
         World { width: WORLD_WIDTH }
     }
+
+    pub fn width(&self) -> usize {
+        self.width
+    }
 }
 
 
