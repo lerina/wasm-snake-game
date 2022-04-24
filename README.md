@@ -1,29 +1,37 @@
-# wasm-snake-game: Slide 6
+# wasm-snake-game: Slide 7
 
-Refresh canvas
+Update snake. Just head for now :-)
 
+On the Rust side:
 
-```js
-import init, { World } from "../pkg/snake_game.js";
-
-init().then(_ => {
-    const CELL_SIZE = 20;
-    const refresh_rate = 100;
-
-    const world = World.new();
+```rust
+#[wasm_bindgen]
+impl World {
+    pub fn new() -> Self {
+        World { 
+            width: WORLD_WIDTH,
+            snake: Snake::new(10),
+        }
+    }
 
 ...
 
-    drawWorld();
-    drawSnake();
+    pub fn update(&mut self) {
+        let snake_idx = self.snake_head_idx();
+        self.snake.body[0].0 = (snake_idx + 1) % (self.width * self.height);
+    }
+}
 
+```
+
+Call the wasm update() from Javascript
+```js
     setInterval(() => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawWorld();
         drawSnake();
 
+        world.update();
     }, refresh_rate);
-})
 ```
-
 
