@@ -1,49 +1,62 @@
-# wasm-snake-game: Slide 9
+# wasm-snake-game: Slide 10
 
-- setTimeout()
+Testing plain vanilla typescript
 
-The global setTimeout() method sets a timer which executes a function or specified piece of code once the timer expires.
-This gives a little time for the page to load before jumping into the "gameloop"
+- Rename index.js and make a single modification by add type for the canvas element
 
-- requestAnimationFrame()
-
-Tells the browser that you wish to perform an animation and requests that the browser calls a specified function to update an animation before the next repaint.
-
-- update
-Our callback routine, that must itself call requestAnimationFrame() again 
-since we want to animate another frame at the next repaint. 
-requestAnimationFrame() is 1 shot.
-
-
-
-```js
+```ts
 import init, { World } from "../pkg/snake_game.js";
 
 init().then(_ => {
     const CELL_SIZE = 20;
     const refresh_rate = 100;
 
-...
+    const world = World.new();
+    const world_width = world.width(); // avoid back and forth js-rust
 
-    //drawWorld();
-    //drawSnake();
-    
-    function update() {
-        setTimeout(() => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawWorld();
-            drawSnake();
-            world.update();
-            
-            requestAnimationFrame(update);
-        }, refresh_rate);
-    }
-    
-    update();
-})
+    const canvas = <HTMLCanvasElement> document.getElementById("snake-canvas");
+ ...
+
 ```
 
-see also:  
-[CREATE A PROPER GAME LOOP](https://spicyyoghurt.com/tutorials/html5-javascript-game-development/create-a-proper-game-loop-with-requestanimationframe)  
-[MDN: Anatomy of a video game](https://developer.mozilla.org/en-US/docs/Games/Anatomy)  
+- create a config file for ts compiler for our convinience
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "ES6",
+    "esModuleInterop": true,
+  },
+  "files": [
+    "index.ts",
+  ],
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Recommended"
+}
+```
+
+- update our build script
+
+```bash
+#!/bin/sh
+
+set -ex
+
+wasm-pack build --target web
+
+
+# tsc --module ES6 --target ES6 www/index.ts
+
+# using config file in www/tsconfig.json
+tsc -p ./www/
+
+
+printf '%s\n' "serving page at: http://127.0.0.1:8080"
+#python3 -m http.server
+
+cp -fr pkg www/
+http -a 127.0.0.1 -p 8080 www/
+```
+
 
