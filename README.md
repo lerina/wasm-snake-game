@@ -32,8 +32,33 @@ So we'll pass on the rand crate.
 
 ## Using js_sys
 
-```toml
+- add js-sys dependency in Cargo.toml
 
+```toml
+[dependencies]
+wasm-bindgen = "0.2.63"
+wee_alloc = "0.4.5"
+js-sys = "0.3.57"
+```
+
+- make it available
+
+```
+use js_sys::Math;
+
+... 
+    
+#[wasm_bindgen]
+impl World {
+    pub fn new(width: usize, height: usize) -> Self {
+        let snake_start_idx = Math::random() * (width * height) as f64;
+        World { 
+            width,
+            height,
+            snake: Snake::new(snake_start_idx as usize),
+        }
+    }
+...
 ```
 
 At this point we dont need anything other that the random method. 
