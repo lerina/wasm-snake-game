@@ -50,7 +50,7 @@ So relying on javascript's Math.random() makes sense for our purpose.
 in ./utils/rnd.ts
 
 ```ts
-export function rnd(max) {
+export function rnd(max: number) : number {
     return Math.floor(Math.random() * max);
 }
 ```
