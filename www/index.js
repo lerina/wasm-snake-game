@@ -1,13 +1,16 @@
-import init, { World } from "../pkg/snake_game.js";
+import init, { World } from "./pkg/snake_game.js";
+import { rnd } from "./utils/rnd.js";
 init().then(_ => {
     const CELL_SIZE = 20;
     const refresh_rate = 100;
-    const world = World.new();
-    const world_width = world.width(); // avoid back and forth js-rust
+    const WORLD_WIDTH = 8;
+    const WORLD_HEIGHT = 8;
+    const SNAKE_SPAWN_IDX = rnd(WORLD_WIDTH * WORLD_HEIGHT);
+    const world = World.new(WORLD_WIDTH, WORLD_HEIGHT, SNAKE_SPAWN_IDX);
     const canvas = document.getElementById("snake-canvas");
     const ctx = canvas.getContext("2d");
-    canvas.height = world_width * CELL_SIZE;
-    canvas.width = world_width * CELL_SIZE; // world_widht: bad name dim would be better
+    canvas.width = WORLD_WIDTH * CELL_SIZE;
+    canvas.height = WORLD_HEIGHT * CELL_SIZE;
     function drawWorld() {
         ctx.beginPath();
         // mk column: mv on the y axis
@@ -24,8 +27,8 @@ init().then(_ => {
     }
     function drawSnake() {
         const snake_idx = world.snake_head_idx();
-        const col = snake_idx % world_width;
-        const row = Math.floor(snake_idx / world_width);
+        const col = snake_idx % WORLD_WIDTH;
+        const row = Math.floor(snake_idx / WORLD_HEIGHT);
         ctx.beginPath();
         ctx.fillRect(col * CELL_SIZE, row * CELL_SIZE, CELL_SIZE, CELL_SIZE);
         ctx.stroke();

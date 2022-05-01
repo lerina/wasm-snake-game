@@ -4,8 +4,10 @@ use wee_alloc::WeeAlloc;
 #[global_allocator]
 static ALLOC: WeeAlloc = WeeAlloc::INIT;
 
-const WORLD_WIDTH: usize = 8;
-const WORLD_HEIGHT: usize = 8;
+#[wasm_bindgen(module = "/www/utils/rnd.ts")]
+extern "C" {
+    fn rnd(max: usize) -> usize;
+}
 
 struct SnakeCell(usize);
 
@@ -30,13 +32,14 @@ pub struct World {
 
 #[wasm_bindgen]
 impl World {
-    pub fn new() -> Self {
+    pub fn new(width: usize, height: usize, snake_start_idx: usize) -> Self {
         World { 
-            width: WORLD_WIDTH,
-            height: WORLD_HEIGHT,
-            snake: Snake::new(10),
+            width,
+            height,
+            snake: Snake::new(snake_start_idx),
         }
     }
+
 
     pub fn width(&self) -> usize {
         self.width
