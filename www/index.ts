@@ -1,20 +1,39 @@
-import init, { World } from "./pkg/snake_game.js";
+import init, { World, Direction } from "./pkg/snake_game.js";
 import {rnd} from "./utils/rnd.js";
 
 init().then(_ => {
     const CELL_SIZE = 20;
-    const refresh_rate = 100;
+    const fps = 5;
     const WORLD_WIDTH = 8;
     const WORLD_HEIGHT = 8;
-    const SNAKE_SPAWN_IDX = rnd(WORLD_WIDTH * WORLD_HEIGHT);
+    const snakeSpawnIdx = rnd(WORLD_WIDTH * WORLD_HEIGHT);
 
-    const world = World.new(WORLD_WIDTH, WORLD_HEIGHT, SNAKE_SPAWN_IDX);
+    const world = World.new(WORLD_WIDTH, WORLD_HEIGHT, snakeSpawnIdx);
 
     const canvas = <HTMLCanvasElement> document.getElementById("snake-canvas");
     const ctx = canvas.getContext("2d");
    
     canvas.width = WORLD_WIDTH * CELL_SIZE;
     canvas.height = WORLD_HEIGHT * CELL_SIZE;
+
+
+    document.addEventListener("keydown", e => {
+        switch(e.code) {
+            case "ArrowUp": 
+                world.change_snake_dir(Direction.Up);
+                break;
+            case "ArrowRight": 
+                world.change_snake_dir(Direction.Right);
+                break ;
+            case "ArrowDown": 
+                world.change_snake_dir(Direction.Down);
+                break;
+            case "ArrowLeft": 
+                world.change_snake_dir(Direction.Left);
+                break;
+        }
+    });
+
 
     function drawWorld() {
         ctx.beginPath();
@@ -62,7 +81,7 @@ init().then(_ => {
             world.update();
             
             requestAnimationFrame(update);
-        }, refresh_rate);
+        }, 1000 / fps);
     }
     
     update();
