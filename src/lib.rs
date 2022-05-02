@@ -59,7 +59,7 @@ impl World {
         self.height 
     }
     
-    pub fn dim(&self) -> usize {
+    pub fn size(&self) -> usize {
         self.width * self.height
     }
 
@@ -71,31 +71,43 @@ impl World {
         self.snake.direction = direction;
     }
     
+    fn set_snake_head(&mut self, idx: usize) {
+        self.snake.body[0].0 = idx;
+    }
+
+    fn index_to_cell(&self, idx: usize) -> (usize, usize) {
+        //  COLUMN       ,     ROW
+        (idx / self.width, idx % self.height)
+    }
+
+    fn cell_to_index(&self, row: usize, col: usize) -> usize {
+        // WHOLE ROWS + remaining COLUMNS
+        (row * self.width) + col
+    }
+
     pub fn update(&mut self) {
         let snake_idx = self.snake_head_idx();
-        let row = snake_idx / self.height;
-        let col = snake_idx % self.height;
+        let (row, col) = self.index_to_cell(snake_idx);
 
-        match self.snake.direction {
-            Direction::Up => {
-                let next_row = (row - 1) % self.height;
-                self.snake.body[0].0 = (next_row * self.height) + col;
-            },
+        let (new_row, new_col) = match self.snake.direction {
             Direction::Right => {
-                let next_col = (col + 1) % self.width;
-                self.snake.body[0].0 = (row * self.width) + next_col;
-            },
-            Direction::Down => {
-                let next_row = (row + 1) % self.height;
-                self.snake.body[0].0 = (next_row * self.height) + col;
+                (row, (col + 1) % self.width)
             },
             Direction::Left => {
-                let next_col = (col - 1) % self.width;
-                self.snake.body[0].0 = (row * self.width) + next_col;
+                (row, (col - 1) % self.width)
             },
-        }
-    }
-}
+            Direction::Up => {
+                ((row - 1) % self.width, col)
+            },
+            Direction::Down => {
+                ((row +1) % self.width, col)
+            },
+        };
+
+        let next_idx = self.cell_to_index(new_row, new_col);
+        self.set_snake_head(next_idx);
+    } //^-- update()
+} //^-- impl World
 
 
 

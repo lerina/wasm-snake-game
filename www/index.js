@@ -49,14 +49,15 @@ init().then(_ => {
         ctx.fillRect(col * CELL_SIZE, row * CELL_SIZE, CELL_SIZE, CELL_SIZE);
         ctx.stroke();
     }
-    //drawWorld();
-    //drawSnake();
+    function draw_all() {
+        drawWorld();
+        drawSnake();
+    }
     function update() {
         setTimeout(() => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawWorld();
-            drawSnake();
             world.update();
+            draw_all();
             requestAnimationFrame(update);
         }, 1000 / fps);
     }
