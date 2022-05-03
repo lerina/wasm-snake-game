@@ -6,12 +6,12 @@ init().then(wasm => {
     const worldWidth = 8;
     const worldHeight = 8;
     const snakeSpawnIdx = rnd(worldWidth * worldHeight);
-    const world = World.new(worldWidth, worldHeight, snakeSpawnIdx);
+    const world = World.new(worldWidth, snakeSpawnIdx);
     const canvas = document.getElementById("snake-canvas");
     const ctx = canvas.getContext("2d");
     canvas.width = worldWidth * CELL_SIZE;
     canvas.height = worldHeight * CELL_SIZE;
-    const snakeCellPtr = world.snake_cells();
+    const snakeCellPtr = world.snake_cells_ptr();
     const snakeLen = world.snake_length();
     const snakeCells = new Uint32Array(wasm.memory.buffer, snakeCellPtr, snakeLen);
     document.addEventListener("keydown", e => {
@@ -46,10 +46,12 @@ init().then(wasm => {
     }
     function drawSnake() {
         //const snake_idx = world.snake_head_idx();
-        const snakeCells = new Uint32Array(wasm.memory.buffer, world.snake_cells(), world.snake_length());
-        snakeCells.forEach(cellIdx => {
+        const snakeCells = new Uint32Array(wasm.memory.buffer, world.snake_cells_ptr(), world.snake_length());
+        snakeCells.forEach((cellIdx, i) => {
             const x = cellIdx % worldWidth;
             const y = Math.floor(cellIdx / worldWidth);
+            // snake has purple head 
+            ctx.fillStyle = i === 0 ? "#7878dd" : "#343434";
             ctx.beginPath();
             ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
         });
@@ -62,7 +64,7 @@ init().then(wasm => {
     function update() {
         setTimeout(() => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            world.update();
+            world.step();
             draw_all();
             requestAnimationFrame(update);
         }, 1000 / fps);

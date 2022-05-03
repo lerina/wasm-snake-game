@@ -8,7 +8,7 @@ init().then(wasm => {  // change _ to wasm to have access to memory
     const worldHeight = 8;
     const snakeSpawnIdx = rnd(worldWidth * worldHeight);
 
-    const world = World.new(worldWidth, worldHeight, snakeSpawnIdx);
+    const world = World.new(worldWidth, snakeSpawnIdx);
 
     const canvas = <HTMLCanvasElement> document.getElementById("snake-canvas");
     const ctx = canvas.getContext("2d");
@@ -64,20 +64,24 @@ init().then(wasm => {  // change _ to wasm to have access to memory
         
         const snakeCells = new Uint32Array(
             wasm.memory.buffer,
-            world.snake_cells(),
+            world.snake_cells_ptr(),
             world.snake_length(),
         );
 
-        snakeCells.forEach(cellIdx => {
+        snakeCells.forEach((cellIdx, i) => {
             const x = cellIdx % worldWidth;
             const y = Math.floor(cellIdx / worldWidth);
             
-            ctx.beginPath();
+            // snake has purple head 
+            ctx.fillStyle = i === 0 ? "#7878dd" : "#343434";
 
-            ctx.fillRect( x * CELL_SIZE, 
-                          y * CELL_SIZE, 
-                          CELL_SIZE, 
-                          CELL_SIZE);
+            ctx.beginPath();
+            ctx.fillRect( 
+                  x * CELL_SIZE, 
+                  y * CELL_SIZE, 
+                  CELL_SIZE, 
+                  CELL_SIZE
+                );
         });
 
         ctx.stroke();
@@ -91,7 +95,7 @@ init().then(wasm => {  // change _ to wasm to have access to memory
     function update() {
         setTimeout(() => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            world.update();
+            world.step();
             draw_all();
             
             requestAnimationFrame(update);

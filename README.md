@@ -1,140 +1,76 @@
-# wasm-snake-game: Slide 15
+# wasm-snake-game: Slide 16
+## Refactor update
 
-## Add a body to the snake
 
-- Update our snake to have a body
+- extract the direction logic from Update into a new method `gen_next_snake_cell()`
 
 ```rust
-pub struct SnakeCell(usize);
+    fn gen_next_snake_cell(&self) -> SnakeCell {
+        let snake_idx = self.snake_head_idx();
+        let row = snake_idx / self.width;
 
-struct Snake {
-    body: Vec<SnakeCell>,
-    direction: Direction,
-}
+...
 
-impl Snake {
-    fn new(spawn_index: usize, size: usize) -> Self {
-        let mut body = vec!();
-
-        for i in 0..size {
-            body.push(SnakeCell(spawn_index - i)); 
         }
-
-        Snake{
-            body,
-            direction: Direction::Right,
-        }
-    }
-}
 ```
-- helper to get body length
 
+- avoid using costly modulo operations and manage the warping around the world bounds
+
+```
+         match self.snake.direction {
+            Direction::Right => {
+                let right_bound = (row + 1) * self.width;
+                if snake_idx + 1 == right_bound {
+                    SnakeCell(right_bound - self.width)
+                } else {
+                    SnakeCell(snake_idx + 1)
+                }
+            },
+          Direction::Left => {
+                let left_bound = row * self.width;
+                if snake_idx == left_bound {
+                    SnakeCell(left_bound + (self.width - 1))
+                } else {
+                    SnakeCell(snake_idx - 1)
+                }
+            },
+            Direction::Up => {
+                let upper_bound = snake_idx - (row * self.width);
+                if snake_idx == upper_bound {
+                    SnakeCell((self.size - self.width) + upper_bound)
+                } else {
+                    SnakeCell(snake_idx - self.width)
+                }
+            },
+            Direction::Down => {
+                let lower_bound = snake_idx + ((self.width - row) * self.width);
+                if snake_idx + self.width == lower_bound {
+                    SnakeCell(lower_bound - ((row + 1) * self.width))
+                } else {
+                    SnakeCell(snake_idx + self.width)
+                }
+            }
+```
+
+- rename update() to step()and use the SnakeCell returned by gen_next_snake_cell()
 ```rust
-    pub fn snake_length(&self) -> usize {
-        self.snake.body.len()
+    pub fn step(&mut self) {
+        let next_cell = self.gen_next_snake_cell();
+        self.snake.body[0] = next_cell;
     }
 ```
 
-- Expose the snake body vector to JS as a ref 
-
-This is what we want
-
-```
-    pub fn snake_body(&self) -> &Vec<SnakeCell> {
-      &self.snake.body
-    }
-```
-
-But we can't return a ref to Js (borrow can't be checked so its not allowed)
-the error message is `cannot return a borrowed ref with #[wasm_bindgen]`
-
-- The solution is to use a raw pointer. We are telling the Borrow checker that we 
-take responsability to not break borrowing rules on the Js side :-)
-
-```rust
-    // Solution is to use a raw pointer (*const) to the first element of our vector
-    // Borrow checker will not apply the rules.
-    pub fn snake_cells(&self) -> *const SnakeCell {
-        self.snake.body.as_ptr()
-    }
-
-```
-
-## on the Js/Ts side
-
-- Get the pointer to our buffer that is within wasmMemory
+- finally rename update to step in index.ts
+Change world.update() to world.step()
 
 ```ts
-    const snakeCellPtr = world.snake_cells_ptr();
-```
-
-- Create a view from Js/Ts of our wasm memory using Uint32Array
-
-```ts
-    const snakeLen = world.snake_length();
-    const snakeCells = new Uint32Array( 
-                                wasm.memory.buffer, 
-                                snakeCellPtr, 
-                                snakeLen);
-```
-The Uint32Array typed array represents an array of 32-bit unsigned integers in 
-the platform byte order. The contents are initialized to 0. 
-Once established, you can reference elements in the array using the object's methods, 
-or using standard array index syntax (that is, using bracket notation).
-
-
-
-- Update drawSnake to draw the body not just the head.
-
-```ts
-    function drawSnake() {
-        //const snake_idx = world.snake_head_idx();
-        
-        const snakeCells = new Uint32Array(
-            wasm.memory.buffer,
-            world.snake_cells_ptr(),
-            world.snake_length(),
-        );
-
-        snakeCells.forEach(cellIdx => {
-            const x = cellIdx % worldWidth;
-            const y = Math.floor(cellIdx / worldWidth);
+function update() {
+        setTimeout(() => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            world.step();
+            draw_all();
             
-            ctx.beginPath();
-
-            ctx.fillRect(
-                x * CELL_SIZE, 
-                y * CELL_SIZE, 
-                CELL_SIZE, CELL_SIZE);
-        });
-
-        ctx.stroke();
+            requestAnimationFrame(update);
+        }, 1000 / fps);
     }
-```
-
-## Bug in build
-we were compiling our typescript before
-copying pkg into our www folder.
-
-Here is the correct order
-
-```bash
-#!/bin/sh
-
-set -ex
-
-wasm-pack build --target web
-
-cp -fr pkg www/
-
-# tsc --module ES6 --target ES6 www/index.ts
-
-# using config file in www/tsconfig.json
-tsc -p ./www/
-
-
-printf '%s\n' "serving page at: http://127.0.0.1:8080"
-#python3 -m http.server
-
-http -a 127.0.0.1 -p 8080 www/
 ```

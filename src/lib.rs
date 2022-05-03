@@ -10,13 +10,13 @@ extern "C" {
 }
 
 #[wasm_bindgen]
+#[derive(PartialEq)]
 pub enum Direction {
     Up,
     Right,
     Down,
-    Left,
+    Left
 }
-
 
 pub struct SnakeCell(usize);
 
@@ -26,14 +26,14 @@ struct Snake {
 }
 
 impl Snake {
-    fn new(spawn_index: usize, size: usize) -> Self {
+    fn new(spawn_index: usize, size: usize) -> Snake {
         let mut body = vec!();
 
         for i in 0..size {
-            body.push(SnakeCell(spawn_index - i)); 
+            body.push(SnakeCell(spawn_index - i));
         }
 
-        Snake{
+        Snake {
             body,
             direction: Direction::Right,
         }
@@ -43,45 +43,46 @@ impl Snake {
 #[wasm_bindgen]
 pub struct World {
     width: usize,
-    height: usize,
+    size: usize,
     snake: Snake,
 }
 
 #[wasm_bindgen]
 impl World {
-    pub fn new(width: usize, height: usize, snake_start_idx: usize) -> Self {
-        World { 
+    pub fn new(width: usize, snake_idx: usize) -> World {
+        World {
             width,
-            height,
-            snake: Snake::new(snake_start_idx, 3),
+            size: width * width,
+            snake: Snake::new(snake_idx, 3)
         }
     }
 
     pub fn width(&self) -> usize {
         self.width
     }
-    pub fn height(&self) -> usize { 
-        self.height 
-    }
-    
-    pub fn size(&self) -> usize {
-        self.width * self.height
-    }
 
     pub fn snake_head_idx(&self) -> usize {
-        self.snake.body[0].0
+       self.snake.body[0].0
     }
-    
+
     pub fn change_snake_dir(&mut self, direction: Direction) {
         self.snake.direction = direction;
     }
-    
-    fn set_snake_head(&mut self, idx: usize) {
-        self.snake.body[0].0 = idx;
-    }
-    
+
     pub fn snake_length(&self) -> usize {
         self.snake.body.len()
+    }
+    // helper method
+    fn index_to_xy(&self, idx: usize) -> (usize, usize) {
+        // get 2d x,y coordinates from an index in 1d 
+        //  x            ,     y
+        (idx % self.width, idx / self.width)
+    }
+
+    fn xy_to_index(&self, x: usize, y: usize) -> usize {
+        // get index in 1d from a 2d x,y coordinates
+        // WHOLE ROWS + remaining COLUMNS
+        (y * self.width) + x
     }
 
     //NOTE: can't return ref to Js (borrow can't be checked so not allowed)
@@ -95,46 +96,51 @@ impl World {
         self.snake.body.as_ptr()
     }
 
-    fn index_to_xy(&self, idx: usize) -> (usize, usize) {
-        //  x            ,     y
-        (idx % self.width, idx / self.width)
+    pub fn step(&mut self) {
+        let next_cell = self.gen_next_snake_cell();
+        self.snake.body[0] = next_cell;
     }
 
-    fn xy_to_index(&self, x: usize, y: usize) -> usize {
-        // WHOLE ROWS + remaining COLUMNS
-        (y * self.width) + x
-    }
-
-    pub fn update(&mut self) {
+    fn gen_next_snake_cell(&self) -> SnakeCell {
         let snake_idx = self.snake_head_idx();
-        let (x, y) = self.index_to_xy(snake_idx);
+        let row = snake_idx / self.width;
 
-        let (new_x, new_y) = match self.snake.direction {
+         match self.snake.direction {
             Direction::Right => {
-                ((x + 1) % self.width, y)
+                let right_bound = (row + 1) * self.width;
+                if snake_idx + 1 == right_bound {
+                    SnakeCell(right_bound - self.width)
+                } else {
+                    SnakeCell(snake_idx + 1)
+                }
             },
-            Direction::Left => {
-                ((x - 1) % self.width, y)
+          Direction::Left => {
+                let left_bound = row * self.width;
+                if snake_idx == left_bound {
+                    SnakeCell(left_bound + (self.width - 1))
+                } else {
+                    SnakeCell(snake_idx - 1)
+                }
             },
             Direction::Up => {
-                (x, (y - 1) % self.width)
+                let upper_bound = snake_idx - (row * self.width);
+                if snake_idx == upper_bound {
+                    SnakeCell((self.size - self.width) + upper_bound)
+                } else {
+                    SnakeCell(snake_idx - self.width)
+                }
             },
             Direction::Down => {
-                (x, (y +1) % self.width)
-            },
-        };
-
-        let next_idx = self.xy_to_index(new_x, new_y);
-        self.set_snake_head(next_idx);
-    } //^-- update()
-} //^-- impl World
-
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
+                let lower_bound = snake_idx + ((self.width - row) * self.width);
+                if snake_idx + self.width == lower_bound {
+                    SnakeCell(lower_bound - ((row + 1) * self.width))
+                } else {
+                    SnakeCell(snake_idx + self.width)
+                }
+            }
+        }
     }
+
 }
+
+// wasm-pack build --target web
