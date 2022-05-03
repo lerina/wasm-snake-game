@@ -12,14 +12,14 @@ impl World {
         self.snake.body[0].0 = idx;
     }
 
-    fn index_to_cell(&self, idx: usize) -> (usize, usize) {
-        //  COLUMN       ,     ROW
-        (idx / self.width, idx % self.height)
+    fn index_to_xy(&self, idx: usize) -> (usize, usize) {
+        //  x            ,     y
+        (idx % self.width, idx / self.width)
     }
 
-    fn cell_to_index(&self, row: usize, col: usize) -> usize {
-        // WHOLE ROWS + remaining COLUMNS
-        (row * self.width) + col
+    fn xy_to_index(&self, x: usize, y: usize) -> usize {
+        // WHOLE ROWS    + remaining COLUMNS gives index
+        (y * self.width) + x
     }
 
     pub fn update(&mut self) {
@@ -31,24 +31,24 @@ impl World {
 ```rust
     pub fn update(&mut self) {
         let snake_idx = self.snake_head_idx();
-        let (row, col) = self.index_to_cell(snake_idx);
+        let (x, y) = self.index_to_xy(snake_idx);
 
-        let (new_row, new_col) = match self.snake.direction {
+        let (new_x, new_y) = match self.snake.direction {
             Direction::Right => {
-                (row, (col + 1) % self.width)
+                ((x + 1) % self.width, y)
             },
             Direction::Left => {
-                (row, (col - 1) % self.width)
+                ((x - 1) % self.width, y)
             },
             Direction::Up => {
-                ((row - 1) % self.width, col)
+                (x, (y - 1) % self.width)
             },
             Direction::Down => {
-                ((row +1) % self.width, col)
+                (x, (y +1) % self.width)
             },
         };
 
-        let next_idx = self.cell_to_index(new_row, new_col);
+        let next_idx = self.xy_to_index(new_x, new_y);
         self.set_snake_head(next_idx);
     } //^-- update()
 ...
