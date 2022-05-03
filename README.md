@@ -1,81 +1,140 @@
-# wasm-snake-game: Slide 14
+# wasm-snake-game: Slide 15
 
-## Refactoring the direction code
+## Add a body to the snake
 
-- first some helpers
-```rust
-#[wasm_bindgen]
-impl World {
-...
-    
-    fn set_snake_head(&mut self, idx: usize) {
-        self.snake.body[0].0 = idx;
-    }
-
-    fn index_to_xy(&self, idx: usize) -> (usize, usize) {
-        //  x            ,     y
-        (idx % self.width, idx / self.width)
-    }
-
-    fn xy_to_index(&self, x: usize, y: usize) -> usize {
-        // WHOLE ROWS    + remaining COLUMNS gives index
-        (y * self.width) + x
-    }
-
-    pub fn update(&mut self) {
-...
-```
-
-- decluter Update
+- Update our snake to have a body
 
 ```rust
-    pub fn update(&mut self) {
-        let snake_idx = self.snake_head_idx();
-        let (x, y) = self.index_to_xy(snake_idx);
+pub struct SnakeCell(usize);
 
-        let (new_x, new_y) = match self.snake.direction {
-            Direction::Right => {
-                ((x + 1) % self.width, y)
-            },
-            Direction::Left => {
-                ((x - 1) % self.width, y)
-            },
-            Direction::Up => {
-                (x, (y - 1) % self.width)
-            },
-            Direction::Down => {
-                (x, (y +1) % self.width)
-            },
-        };
+struct Snake {
+    body: Vec<SnakeCell>,
+    direction: Direction,
+}
 
-        let next_idx = self.xy_to_index(new_x, new_y);
-        self.set_snake_head(next_idx);
-    } //^-- update()
-...
+impl Snake {
+    fn new(spawn_index: usize, size: usize) -> Self {
+        let mut body = vec!();
+
+        for i in 0..size {
+            body.push(SnakeCell(spawn_index - i)); 
+        }
+
+        Snake{
+            body,
+            direction: Direction::Right,
+        }
+    }
+}
+```
+- helper to get body length
+
+```rust
+    pub fn snake_length(&self) -> usize {
+        self.snake.body.len()
+    }
 ```
 
-## fixing a bug in index.ts
-- First we group the various drawing 
+- Expose the snake body vector to JS as a ref 
+
+This is what we want
+
+```
+    pub fn snake_body(&self) -> &Vec<SnakeCell> {
+      &self.snake.body
+    }
+```
+
+But we can't return a ref to Js (borrow can't be checked so its not allowed)
+the error message is `cannot return a borrowed ref with #[wasm_bindgen]`
+
+- The solution is to use a raw pointer. We are telling the Borrow checker that we 
+take responsability to not break borrowing rules on the Js side :-)
+
+```rust
+    // Solution is to use a raw pointer (*const) to the first element of our vector
+    // Borrow checker will not apply the rules.
+    pub fn snake_cells(&self) -> *const SnakeCell {
+        self.snake.body.as_ptr()
+    }
+
+```
+
+## on the Js/Ts side
+
+- Get the pointer to our buffer that is within wasmMemory
+
 ```ts
-    
-    function draw_all(){
-        drawWorld();
-        drawSnake();
+    const snakeCellPtr = world.snake_cells_ptr();
+```
+
+- Create a view from Js/Ts of our wasm memory using Uint32Array
+
+```ts
+    const snakeLen = world.snake_length();
+    const snakeCells = new Uint32Array( 
+                                wasm.memory.buffer, 
+                                snakeCellPtr, 
+                                snakeLen);
+```
+The Uint32Array typed array represents an array of 32-bit unsigned integers in 
+the platform byte order. The contents are initialized to 0. 
+Once established, you can reference elements in the array using the object's methods, 
+or using standard array index syntax (that is, using bracket notation).
+
+
+
+- Update drawSnake to draw the body not just the head.
+
+```ts
+    function drawSnake() {
+        //const snake_idx = world.snake_head_idx();
+        
+        const snakeCells = new Uint32Array(
+            wasm.memory.buffer,
+            world.snake_cells_ptr(),
+            world.snake_length(),
+        );
+
+        snakeCells.forEach(cellIdx => {
+            const x = cellIdx % worldWidth;
+            const y = Math.floor(cellIdx / worldWidth);
+            
+            ctx.beginPath();
+
+            ctx.fillRect(
+                x * CELL_SIZE, 
+                y * CELL_SIZE, 
+                CELL_SIZE, CELL_SIZE);
+        });
+
+        ctx.stroke();
     }
 ```
-- then we fix the bug caused by drawing before updating the world which
-had the adverse effect when changing direction at the borders of the world.
 
-```ts    
-    function update() {
-        setTimeout(() => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            world.update();
-            draw_all();
-            
-            requestAnimationFrame(update);
-        }, 1000 / fps);
-    }
-    
-    update();
+## Bug in build
+we were compiling our typescript before
+copying pkg into our www folder.
+
+Here is the correct order
+
+```bash
+#!/bin/sh
+
+set -ex
+
+wasm-pack build --target web
+
+cp -fr pkg www/
+
+# tsc --module ES6 --target ES6 www/index.ts
+
+# using config file in www/tsconfig.json
+tsc -p ./www/
+
+
+printf '%s\n' "serving page at: http://127.0.0.1:8080"
+#python3 -m http.server
+
+http -a 127.0.0.1 -p 8080 www/
 ```

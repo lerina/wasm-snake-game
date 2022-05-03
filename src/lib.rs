@@ -18,7 +18,7 @@ pub enum Direction {
 }
 
 
-struct SnakeCell(usize);
+pub struct SnakeCell(usize);
 
 struct Snake {
     body: Vec<SnakeCell>,
@@ -26,10 +26,16 @@ struct Snake {
 }
 
 impl Snake {
-    fn new(spawn_index: usize) -> Self {
+    fn new(spawn_index: usize, size: usize) -> Self {
+        let mut body = vec!();
+
+        for i in 0..size {
+            body.push(SnakeCell(spawn_index - i)); 
+        }
+
         Snake{
-            body: vec!(SnakeCell(spawn_index)),
-            direction: Direction::Down,
+            body,
+            direction: Direction::Right,
         }
     }
 }
@@ -47,10 +53,9 @@ impl World {
         World { 
             width,
             height,
-            snake: Snake::new(snake_start_idx),
+            snake: Snake::new(snake_start_idx, 3),
         }
     }
-
 
     pub fn width(&self) -> usize {
         self.width
@@ -73,6 +78,21 @@ impl World {
     
     fn set_snake_head(&mut self, idx: usize) {
         self.snake.body[0].0 = idx;
+    }
+    
+    pub fn snake_length(&self) -> usize {
+        self.snake.body.len()
+    }
+
+    //NOTE: can't return ref to Js (borrow can't be checked so not allowed)
+    //cannot return a borrowed ref with #[wasm_bindgen]
+    //pub fn snake_body(&self) -> &Vec<SnakeCell> {
+    //  &self.snake.body
+    //}
+    // Solution is to use a raw pointer (*const) to the first element of our vector
+    // Borrow checker will not apply the rules.
+    pub fn snake_cells_ptr(&self) -> *const SnakeCell {
+        self.snake.body.as_ptr()
     }
 
     fn index_to_xy(&self, idx: usize) -> (usize, usize) {
@@ -108,7 +128,6 @@ impl World {
         self.set_snake_head(next_idx);
     } //^-- update()
 } //^-- impl World
-
 
 
 #[cfg(test)]

@@ -1,20 +1,24 @@
 import init, { World, Direction } from "./pkg/snake_game.js";
 import {rnd} from "./utils/rnd.js";
 
-init().then(_ => {
+init().then(wasm => {  // change _ to wasm to have access to memory
     const CELL_SIZE = 20;
     const fps = 5;
-    const WORLD_WIDTH = 8;
-    const WORLD_HEIGHT = 8;
-    const snakeSpawnIdx = rnd(WORLD_WIDTH * WORLD_HEIGHT);
+    const worldWidth = 8;
+    const worldHeight = 8;
+    const snakeSpawnIdx = rnd(worldWidth * worldHeight);
 
-    const world = World.new(WORLD_WIDTH, WORLD_HEIGHT, snakeSpawnIdx);
+    const world = World.new(worldWidth, worldHeight, snakeSpawnIdx);
 
     const canvas = <HTMLCanvasElement> document.getElementById("snake-canvas");
     const ctx = canvas.getContext("2d");
    
-    canvas.width = WORLD_WIDTH * CELL_SIZE;
-    canvas.height = WORLD_HEIGHT * CELL_SIZE;
+    canvas.width = worldWidth * CELL_SIZE;
+    canvas.height = worldHeight * CELL_SIZE;
+
+    const snakeCellPtr = world.snake_cells_ptr();
+    const snakeLen = world.snake_length();
+    const snakeCells = new Uint32Array( wasm.memory.buffer, snakeCellPtr, snakeLen);
 
 
     document.addEventListener("keydown", e => {
@@ -56,16 +60,25 @@ init().then(_ => {
     
 
     function drawSnake() {
-        const snake_idx = world.snake_head_idx();
-        const col = snake_idx % WORLD_WIDTH;
-        const row = Math.floor(snake_idx / WORLD_HEIGHT);
+        //const snake_idx = world.snake_head_idx();
         
-        ctx.beginPath();
+        const snakeCells = new Uint32Array(
+            wasm.memory.buffer,
+            world.snake_cells(),
+            world.snake_length(),
+        );
 
-        ctx.fillRect(
-            col * CELL_SIZE, 
-            row * CELL_SIZE, 
-            CELL_SIZE, CELL_SIZE);
+        snakeCells.forEach(cellIdx => {
+            const x = cellIdx % worldWidth;
+            const y = Math.floor(cellIdx / worldWidth);
+            
+            ctx.beginPath();
+
+            ctx.fillRect( x * CELL_SIZE, 
+                          y * CELL_SIZE, 
+                          CELL_SIZE, 
+                          CELL_SIZE);
+        });
 
         ctx.stroke();
     }
