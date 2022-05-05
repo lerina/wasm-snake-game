@@ -1,11 +1,12 @@
-# wasm-snake-game: Slide 19
+# wasm-snake-game: Slide 19 
 
 ## improve snake dir
 
 We will need to copy 
 
 ```rust
-// Clone is a supertrait of Copy, so everything which is Copy must also implement Clone.
+// Clone is a supertrait of Copy, 
+// so everything which is Copy must also implement Clone.
 #[derive(Copy, Clone)]
 pub struct SnakeCell(usize);
 
