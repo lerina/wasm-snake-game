@@ -18,6 +18,7 @@ pub enum Direction {
     Left
 }
 
+// Clone is a supertrait of Copy, so everything which is Copy must also implement Clone.
 #[derive(Copy, Clone)]
 pub struct SnakeCell(usize);
 
@@ -47,6 +48,7 @@ pub struct World {
     width: usize,
     size: usize,
     snake: Snake,
+    next_cell: Option<SnakeCell>,
 }
 
 #[wasm_bindgen]
@@ -55,7 +57,8 @@ impl World {
         World {
             width,
             size: width * width,
-            snake: Snake::new(snake_idx, 3)
+            snake: Snake::new(snake_idx, 3),
+            next_cell: None,
         }
     }
 
@@ -72,7 +75,9 @@ impl World {
 
         // can't 180
         if self.snake.body[1].0 == next_cell.0 { return;}
-
+        
+        // Its ok to change dir    
+        self.next_cell = Some(next_cell);
         self.snake.direction = direction;
     }
 
@@ -103,10 +108,19 @@ impl World {
         self.snake.body.as_ptr()
     }
 
-    pub fn step(&mut self) {
+
+    pub fn step(&mut self) {        // because of the Mutable Reference
         let tmp = self.snake.body.clone();
-        let next_cell = self.gen_next_snake_cell(&self.snake.direction);
-        self.snake.body[0] = next_cell;
+
+        match self.next_cell {      // Copy trait on SnakeCell is needed here
+            Some(next_cell) => { //keypress occured with valid dir
+                self.snake.body[0] = next_cell;
+                self.next_cell = None;
+            },
+            None => {            // no keypress . keep moving
+                self.snake.body[0] = self.gen_next_snake_cell(&self.snake.direction);
+            }
+        }
 
         let len = self.snake.body.len();
 
