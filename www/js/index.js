@@ -1,5 +1,5 @@
-import init, { World, Direction } from "./pkg/snake_game.js";
-import { rnd } from "./utils/rnd.js";
+import init, { World, Direction } from "../pkg/snake_game.js";
+import { rnd } from "../utils/rnd.js";
 init().then(wasm => {
     const CELL_SIZE = 20;
     const fps = 5;
